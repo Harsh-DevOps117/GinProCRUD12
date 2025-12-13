@@ -27,7 +27,6 @@ func DataBaseInit() (*gorm.DB,error){
 	return db,nil
 }
 
-
 func DBAutoMigrate(db *gorm.DB){
 	db.AutoMigrate(&models.User{},&models.Notes{})
 }
