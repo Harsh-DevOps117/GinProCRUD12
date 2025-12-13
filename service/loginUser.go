@@ -21,7 +21,6 @@ func NewLoginService(db *gorm.DB) *LoginService {
 func (s *LoginService) Login(email, password string) (*models.User, error) {
 	var user models.User
 
-	// 1. Find user by email
 	if err := s.db.Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, ErrInvalidCredentials

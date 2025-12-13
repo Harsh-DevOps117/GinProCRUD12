@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/harshdevops117/controller"
-	"github.com/harshdevops117/db"
+	database "github.com/harshdevops117/db"
 	"github.com/harshdevops117/models"
 	"github.com/harshdevops117/service"
 )
@@ -13,23 +14,34 @@ import (
 func main() {
 	app := gin.Default()
 
-	db,err:=db.DataBaseInit()
-	if err!=nil{
-		panic(err)
-	}
-	db.AutoMigrate(&models.User{},&models.Notes{})
+	app.SetTrustedProxies([]string{"127.0.0.1"})
 
-	app.GET("/",func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK,gin.H{
-			"message":"Cats",
+	dbConn, err := database.DataBaseInit()
+	if err != nil {
+		log.Fatal("failed to connect to database:", err)
+	}
+
+	if err := dbConn.AutoMigrate(&models.User{}, &models.Notes{}); err != nil {
+		log.Fatal("migration failed:", err)
+	}
+
+	app.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "Cats",
 		})
 	})
 
-	serviceRegistration:=service.NewRegisterUser(db)
-	serviceRegistration1:=service.NewLoginService(db)
-	ControllerRegistration:=controller.NewAuthController(serviceRegistration,serviceRegistration1)
+	registerService := service.NewRegisterUser(dbConn)
+	loginService := service.NewLoginService(dbConn)
+	notesService := service.NewNotesService(dbConn)
 
-	ControllerRegistration.RegisterRoutes(app)
+	authController := controller.NewAuthController(registerService, loginService)
+	notesController := controller.NewNotesController(notesService)
 
-	app.Run(":8000")
+	authController.RegisterRoutes(app)
+	notesController.RegisterRoutes(app)
+
+	if err := app.Run(":8000"); err != nil {
+		log.Fatal("server failed to start:", err)
+	}
 }

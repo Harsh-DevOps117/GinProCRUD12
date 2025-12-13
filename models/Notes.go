@@ -8,3 +8,8 @@ type Notes struct {
 	Content string `gorm:"type:text;not null"`
 	UserID  uint
 }
+
+type UpdateNoteDTO struct {
+	Title   string `json:"title"`
+	Content string `json:"content"`
+}
